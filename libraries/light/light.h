@@ -7,6 +7,7 @@
 
 #ifndef LIGHT_H_
 #define LIGHT_H_
+#include <string.h>
 
 
 #endif /* LIGHT_H_ */
@@ -17,6 +18,8 @@ public:
 	int delay;
 	//接口ID
 	int interid;
+	std::string abc;
+	std::string inputto(std::string teminput);
 
 	bool getStatus();
 	void open();
