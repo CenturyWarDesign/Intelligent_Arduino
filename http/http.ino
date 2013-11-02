@@ -114,8 +114,8 @@ void httpRequest() {
 
 void stateChange()
 {
+  Serial.println("break");
    if (client.available()) {
-  
              client.println("1_2_4_5");
              Serial.println("write...");
            // sendto="";
