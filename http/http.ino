@@ -39,8 +39,9 @@ Light light4(12);
 Light light5(13);
 Light lightarr[5]={light1,light2,light3,light4,light5};
 String sendtoserver="";
-int sendPollSize=50;
-String sendPoll[50];
+//20 is can use ,please send some import message
+int sendPollSize=20;
+String sendPoll[20];
 int sendpollmin=0;
 int sendpollmax=0;
 
