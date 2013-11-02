@@ -54,7 +54,7 @@ void ondata(SocketIOClient client, char *data) {
 	//Serial.print(data);
         comdata=data;
         mark=1;
-	//Serial.print("comdata:"+comdata);
+	Serial.print("comdata:"+comdata);
         inputTostring();
 
 }
@@ -84,39 +84,48 @@ void loop() {
           client.disconnect();
           if (!client.connect(hostname, port)) Serial.println(F("Not connected."));
         }
+        getSerialValue();
 	client.monitor();
 	unsigned long now = millis();
 	if ((now - lasthello) >= HELLO_INTERVAL) {
 		lasthello = now;
   	if (client.connected()&&sendpollmax!=sendpollmin) 
           {
+
+            
                 char tem[sendPoll[sendpollmin].length()];
                 int i = 0;
-                  for(; i < comdata.length() ; i++)
+                Serial.println("=");
+                  for(; i < sendPoll[sendpollmin].length() ; i++)
                   {
-                    Serial.print(i);
-                    tem[i]=comdata[i];
-                }
+                    //Serial.println("=");
+                    Serial.println((int)sendPoll[sendpollmin].charAt(i));
+                    tem[i]=(int)sendPoll[sendpollmin].charAt(i);
+                    //tem[i]=sendPoll[sendpollmin][i];
+                  }
+                  Serial.println("=");
                 //tem[i]=char(13);
               client.send(tem);
+              
+              sendPoll[sendpollmin]="";
               sendpollmin++;
               if(sendpollmin>=sendPollSize){
                   sendpollmin=0;
                }
-                Serial.print("sendpollmax: ");
-                 Serial.println(sendpollmax);
-                  Serial.print("sendpollmin: ");
-                   Serial.println(sendpollmin);
+                //Serial.print("sendpollmax: ");
+                // Serial.println(sendpollmax);
+                //  Serial.print("sendpollmin: ");
+                //   Serial.println(sendpollmin);
             }
 	}
 }
 
 void pushToSend(String sendstr){
-  sendpollmax++;
+  sendPoll[sendpollmax]=sendstr;
+   sendpollmax++;
   if(sendpollmax>=sendPollSize){
     sendpollmax=0;
   }
-  sendPoll[sendpollmax]=sendstr;
   //sendtoserver=sendstr;
 }
 
@@ -165,22 +174,21 @@ if(classType=10){
     lightarr[interNum-1].open();
      lightstatus=lightarr[interNum-1].getStatus();
     Serial.println(lightstatus);
-    pushToSend("open it");
-    pushToSend("open it two");
+    pushToSend("1");
   }
   else if(oprate==0)
   {
-    digitalWrite(lightarr[interNum-1].getInter(),LOW);
+      digitalWrite(lightarr[interNum-1].getInter(),LOW);
       lightarr[interNum-1].close();
-     lightstatus=lightarr[interNum-1].getStatus();
-      Serial.println(lightstatus);
-       pushToSend("close it");
+       lightstatus=lightarr[interNum-1].getStatus();
+        Serial.println(lightstatus);
+       pushToSend("2");
   }
   else if(oprate==2)
   {
      lightstatus=lightarr[interNum-1].getStatus();
-    Serial.println(lightstatus);
-    pushToSend("status it");
+      Serial.println(lightstatus);
+       pushToSend("3");
     //if (client.connected()) client.send("status it");
   }
   else
