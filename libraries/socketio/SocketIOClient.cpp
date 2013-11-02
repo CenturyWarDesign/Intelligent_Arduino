@@ -81,23 +81,27 @@ void SocketIOClient::monitor() {
 		dataptr = databuffer;
 		switch (databuffer[0]) {	
 
-		case '1':		// connect: []
-			which = 6;
-			break;
+		
 
-		case '2':		// heartbeat: [2::]
-			client.print((char)0);
-			client.print("2::");
-			client.print((char)255);
-			continue;
+		
 
 		case '5':		// event: [5:::{"name":"ls"}]
 			which = 4;
 			break;
-
+		case '2':		// heartbeat: [2::]
+			//client.print((char)0);
+			//client.print("2::");
+			//client.print((char)255);
+			//continue;
+		case '1':		// connect: []
+			//which = 6;
+			//break;
 		default: 
-			Serial.print("Drop ");
+			//Serial.print("Drop ");
 			Serial.println(dataptr);
+			if (dataArrivedDelegate != NULL) {
+				dataArrivedDelegate(*this, databuffer);
+			}
 			continue;
 		}
 
@@ -119,12 +123,14 @@ void SocketIOClient::monitor() {
 		Serial.print("]");
 
 		if (dataArrivedDelegate != NULL) {
+			Serial.println("huidiao:");
 			dataArrivedDelegate(*this, databuffer);
 		}
 	}
 }
 
 void SocketIOClient::setDataArrivedDelegate(DataArrivedDelegate newdataArrivedDelegate) {
+	Serial.println("set dateaarr");
 	  dataArrivedDelegate = newdataArrivedDelegate;
 }
 void SocketIOClient::setSec(char sec[]) {
