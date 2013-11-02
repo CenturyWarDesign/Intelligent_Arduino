@@ -1,14 +1,29 @@
+/***
+	hello.ino: Hello World Socket.IO Client for Arduino/Bitlash
 
+	Copyright (C) 2013 Bill Roy
+	MIT license: see LICENSE file.
+
+	This sketch listens for a Bitlash command from a socket.io server and
+	executes the command, returning its output to the server over the websocket.
+	
+	For testing, you will find a companion socket.io server in the file 
+	index.js in the same directory.
+
+	Run the server ("node index.js"), then boot up the Arduino with this sketch on it.	
+	Commands you type on the server console will be executed on the Arduino, 
+	and the resulting Bitlash output will be displayed on the server console.
+
+	You will need to adjust the hostname and port below to match your network.
+	By default the server runs on port 3000.
+
+***/
 #include "SocketIOClient.h"
 #include "Ethernet.h"
 #include "SPI.h"
 #include <light.h>
 //#include "bitlash.h"
 SocketIOClient client;
-
-byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-char hostname[] = "192.168.1.110";
-int port = 8080;
 String comdata = "";
 int numdata[7] ={0};
 int classType;
@@ -24,54 +39,55 @@ Light light4(12);
 Light light5(13);
 Light lightarr[5]={light1,light2,light3,light4,light5};
 String sendtoserver="";
+
+byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+char hostname[] = "192.168.1.110";
+int port = 8080;
+
+
 // websocket message handler: do something with command from server
 void ondata(SocketIOClient client, char *data) {
+	//Serial.print(data);
         comdata=data;
         mark=1;
 	//Serial.print("comdata:"+comdata);
         inputTostring();
+
 }
+
 void setup() {
 	Serial.begin(9600);
+
 	Ethernet.begin(mac);
-	client.setDataArrivedDelegate(ondata);
-        client.setSec("7a941492a0dc743544ebc71c89370a61");
         pinMode(light1.getInter(),OUTPUT);
         pinMode(light2.getInter(),OUTPUT);
         pinMode(light3.getInter(),OUTPUT);
         pinMode(light4.getInter(),OUTPUT);
         pinMode(light5.getInter(),OUTPUT);
+
+	client.setDataArrivedDelegate(ondata);
+        client.setSec("7a941492a0dc743544ebc71c89370a61");
+	//if (!client.connect(hostname, port)) Serial.println(F("Not connected."));
+	//if (client.connected()) client.send("Client here!");
 }
 
 #define HELLO_INTERVAL 3000UL
 unsigned long lasthello;
 
 void loop() {
-    if(!client.connected()){
-      delay(1000);
-      client.disconnect();
-      if (!client.connect(hostname, port)) Serial.println(F("Not connected."));
-    }
-    getSerialValue();
-    client.monitor();
-    unsigned long now = millis();
-    if ((now - lasthello) >= HELLO_INTERVAL) {
-      lasthello = now;
-      if (client.connected()) client.send("hello word!");
-    }
-    if(sendtoserver.length()>0){
-      char tem[50];
-      Serial.print("will send to server");
-      Serial.print(comdata);
-      for(int i = 0; i < comdata.length() ; i++)
-      {
-        Serial.print(i);
-        tem[i]=comdata[i];
-      }
-      client.send(tem);
-      sendtoserver="";
-    }
+        if(!client.connected()){
+          delay(1000);
+          client.disconnect();
+          if (!client.connect(hostname, port)) Serial.println(F("Not connected."));
+        }
+	client.monitor();
+	unsigned long now = millis();
+	if ((now - lasthello) >= HELLO_INTERVAL) {
+		lasthello = now;
+		if (client.connected()) client.send("Hello, world!\n");
+	}
 }
+
 void getSerialValue(){
  /* 当串口有数据的时候，将数据拼接到变量comdata */
   while (Serial.available() > 0)
@@ -141,3 +157,4 @@ if(classType=10){
  
 } 
 }
+
