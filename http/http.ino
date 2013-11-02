@@ -46,8 +46,7 @@ int sendpollmax=0;
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 char hostname[] = "192.168.1.110";
-int port = 8080;
-
+int port = 8080; 
 
 // websocket message handler: do something with command from server
 void ondata(SocketIOClient client, char *data) {
@@ -174,7 +173,15 @@ if(classType=10){
     lightarr[interNum-1].open();
      lightstatus=lightarr[interNum-1].getStatus();
     Serial.println(lightstatus);
-    pushToSend("1");
+    //pushToSend("1");
+    if (client.connected()) 
+    {
+      client.send("r_10_1_3_3");
+    }
+      else
+      {
+        pushToSend("r_10_1_3_3");
+      }
   }
   else if(oprate==0)
   {
@@ -182,14 +189,22 @@ if(classType=10){
       lightarr[interNum-1].close();
        lightstatus=lightarr[interNum-1].getStatus();
         Serial.println(lightstatus);
-       pushToSend("2");
+       //pushToSend("2");
+       if (client.connected())
+      {
+        client.send("r_10_2_3_3");
+      }
+      else
+      {
+        pushToSend("r_10_2_3_3");
+      }
   }
   else if(oprate==2)
   {
      lightstatus=lightarr[interNum-1].getStatus();
       Serial.println(lightstatus);
        pushToSend("3");
-    //if (client.connected()) client.send("status it");
+    //if (client.connected()) client.send("r_10_3_3_3");
   }
   else
   {
