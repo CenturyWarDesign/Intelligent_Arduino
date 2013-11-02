@@ -39,6 +39,10 @@ Light light4(12);
 Light light5(13);
 Light lightarr[5]={light1,light2,light3,light4,light5};
 String sendtoserver="";
+int sendPollSize=50;
+String sendPoll[50];
+int sendpollmin=0;
+int sendpollmax=0;
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 char hostname[] = "192.168.1.110";
@@ -84,8 +88,36 @@ void loop() {
 	unsigned long now = millis();
 	if ((now - lasthello) >= HELLO_INTERVAL) {
 		lasthello = now;
-		if (client.connected()) client.send("Hello, world!\n");
+  	if (client.connected()&&sendpollmax!=sendpollmin) 
+          {
+                char tem[sendPoll[sendpollmin].length()];
+                int i = 0;
+                  for(; i < comdata.length() ; i++)
+                  {
+                    Serial.print(i);
+                    tem[i]=comdata[i];
+                }
+                //tem[i]=char(13);
+              client.send(tem);
+              sendpollmin++;
+              if(sendpollmin>=sendPollSize){
+                  sendpollmin=0;
+               }
+                Serial.print("sendpollmax: ");
+                 Serial.println(sendpollmax);
+                  Serial.print("sendpollmin: ");
+                   Serial.println(sendpollmin);
+            }
 	}
+}
+
+void pushToSend(String sendstr){
+  sendpollmax++;
+  if(sendpollmax>=sendPollSize){
+    sendpollmax=0;
+  }
+  sendPoll[sendpollmax]=sendstr;
+  //sendtoserver=sendstr;
 }
 
 void getSerialValue(){
@@ -133,21 +165,22 @@ if(classType=10){
     lightarr[interNum-1].open();
      lightstatus=lightarr[interNum-1].getStatus();
     Serial.println(lightstatus);
-    sendtoserver="open it";
+    pushToSend("open it");
+    pushToSend("open it two");
   }
   else if(oprate==0)
   {
     digitalWrite(lightarr[interNum-1].getInter(),LOW);
       lightarr[interNum-1].close();
      lightstatus=lightarr[interNum-1].getStatus();
-        Serial.println(lightstatus);
-       sendtoserver="close it";
+      Serial.println(lightstatus);
+       pushToSend("close it");
   }
   else if(oprate==2)
   {
      lightstatus=lightarr[interNum-1].getStatus();
     Serial.println(lightstatus);
-    sendtoserver="status it";
+    pushToSend("status it");
     //if (client.connected()) client.send("status it");
   }
   else

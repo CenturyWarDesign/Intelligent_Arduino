@@ -130,7 +130,7 @@ void SocketIOClient::monitor() {
 }
 
 void SocketIOClient::setDataArrivedDelegate(DataArrivedDelegate newdataArrivedDelegate) {
-	Serial.println("set dateaarr");
+	//Serial.println("set dateaarr");
 	  dataArrivedDelegate = newdataArrivedDelegate;
 }
 void SocketIOClient::setSec(char sec[]) {
@@ -236,6 +236,6 @@ void SocketIOClient::readLine() {
 
 void SocketIOClient::send(char *data) {
 	//client.print((char)0);
-	client.print(data);
+	client.println(data);
 	//client.print((char)255);
 }
