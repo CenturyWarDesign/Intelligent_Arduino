@@ -30,10 +30,12 @@
 
 bool SocketIOClient::connect(char thehostname[], int theport) {
 	if (!client.connect(thehostname, theport)) return false;
+	client.println(secGameuid);
 	hostname = thehostname;
 	port = theport;
-	sendHandshake(hostname);
-	return readHandshake();
+	//sendHandshake(hostname);
+	//return readHandshake();
+	return true;
 }
 
 bool SocketIOClient::connected() {
@@ -64,7 +66,11 @@ void SocketIOClient::monitor() {
 	*databuffer = 0;
 
 	if (!client.connected()) {
-		if (!client.connect(hostname, port)) return;
+		connect(hostname, port);
+		delay(1000);
+		if (client.connected()) {
+			Serial.println(F("conniect.ok"));
+		}
 	}
 
 	if (!client.available()) return;
@@ -123,13 +129,14 @@ void SocketIOClient::setDataArrivedDelegate(DataArrivedDelegate newdataArrivedDe
 }
 void SocketIOClient::setSec(char sec[]) {
 	  secGameuid=sec;
-	  client.println(sec);
+	  //client.println(sec);
 	  //Serial.println(secGameuid);
 }
 
 
 void SocketIOClient::sendHandshake(char hostname[]) {
-	client.println(secGameuid);
+	client.println("7a941492a0dc743544ebc71c89370a61");
+	//Serial.println("send sec:"+secGameuid);
 	//client.print(F("Host: "));
 	//client.println(hostname);
 	//client.println(F("Origin: Arduino\r\n"));
@@ -137,7 +144,7 @@ void SocketIOClient::sendHandshake(char hostname[]) {
 
 bool SocketIOClient::waitForInput(void) {
 unsigned long now = millis();
-	while (!client.available() && ((millis() - now) < 30000UL)) {;}
+	while (!client.available() && ((millis() - now) < 2000UL)) {;}
 	return client.available();
 }
 
@@ -151,7 +158,9 @@ void SocketIOClient::eatHeader(void) {
 bool SocketIOClient::readHandshake() {
 
 	if (!waitForInput()) return false;
-
+	
+	Serial.println(F("waitForInput"));
+	
 	// check for happy "HTTP/1.1 200" response
 	readLine();
 	if (atoi(&databuffer[9]) != 200) {
@@ -221,7 +230,6 @@ void SocketIOClient::readLine() {
 
 void SocketIOClient::send(char *data) {
 	//client.print((char)0);
-	client.print("3:::");
 	client.print(data);
-	client.print((char)255);
+	//client.print((char)255);
 }
