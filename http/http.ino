@@ -46,7 +46,7 @@ int sendpollmin=0;
 int sendpollmax=0;
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-char hostname[] = "192.168.1.110";
+char hostname[] = "42.121.123.185";
 int port = 8080; 
 
 // websocket message handler: do something with command from server
@@ -181,7 +181,7 @@ if(classType=10){
     }
       else
       {
-        pushToSend("r_10_1_3_3");
+        //pushToSend("r_10_1_3_3");
       }
   }
   else if(oprate==0)
@@ -197,14 +197,14 @@ if(classType=10){
       }
       else
       {
-        pushToSend("r_10_2_3_3");
+        //pushToSend("r_10_2_3_3");
       }
   }
   else if(oprate==2)
   {
      lightstatus=lightarr[interNum-1].getStatus();
       Serial.println(lightstatus);
-       pushToSend("3");
+       //pushToSend("3");
     //if (client.connected()) client.send("r_10_3_3_3");
   }
   else
