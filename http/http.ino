@@ -1,4 +1,4 @@
-/***
+1/***
 	hello.ino: Hello World Socket.IO Client for Arduino/Bitlash
 
 	Copyright (C) 2013 Bill Roy
@@ -46,7 +46,7 @@ int sendpollmin=0;
 int sendpollmax=0;
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-char hostname[] = "42.121.123.185";
+char hostname[] = "192.168.1.110";
 int port = 8080; 
 
 // websocket message handler: do something with command from server
@@ -59,6 +59,30 @@ void ondata(SocketIOClient client, char *data) {
 
 }
 
+//get current temperature
+void getTemperature(){
+  int n = analogRead(A0);    //读取A0口的电压值
+  float vol= n * (5.0 / 1023.0*100);   //使用浮点数存储温度数据，温度数据由电压值换算得到
+  char tem[5];
+  dtostrf(vol,2,2,tem);
+  Serial.println("gemperature");
+  Serial.println(tem);
+  char returnstr[]="30_1_00_00";
+//  Serial.println(tem[0]);
+//    Serial.println(tem[1]);
+//      Serial.println(tem[2]);
+//        Serial.println(tem[3]);
+//          Serial.println(tem[4]);
+//  Serial.println(returnstr);
+  returnstr[5]=char(tem[0]);
+  returnstr[6]=char(tem[1]);
+  returnstr[8]=char(tem[3]);
+  returnstr[9]=char(tem[4]);
+  Serial.println(returnstr);
+  client.send(returnstr);
+//  return returnstr;
+}
+
 void setup() {
 	Serial.begin(9600);
 
@@ -68,7 +92,7 @@ void setup() {
         pinMode(light3.getInter(),OUTPUT);
         pinMode(light4.getInter(),OUTPUT);
         pinMode(light5.getInter(),OUTPUT);
-
+getTemperature();
 	client.setDataArrivedDelegate(ondata);
         client.setSec("7a941492a0dc743544ebc71c89370a61");
 	//if (!client.connect(hostname, port)) Serial.println(F("Not connected."));
@@ -76,7 +100,9 @@ void setup() {
 }
 
 #define HELLO_INTERVAL 3000UL
+#define TEMPERATURE 20000UL
 unsigned long lasthello;
+unsigned long sendtemperaturetime;
 
 void loop() {
         if(!client.connected()){
@@ -91,8 +117,6 @@ void loop() {
 		lasthello = now;
   	if (client.connected()&&sendpollmax!=sendpollmin) 
           {
-
-            
                 char tem[sendPoll[sendpollmin].length()];
                 int i = 0;
                 Serial.println("=");
@@ -112,12 +136,17 @@ void loop() {
               if(sendpollmin>=sendPollSize){
                   sendpollmin=0;
                }
-                //Serial.print("sendpollmax: ");
-                // Serial.println(sendpollmax);
-                //  Serial.print("sendpollmin: ");
-                //   Serial.println(sendpollmin);
             }
 	}
+
+
+if ((now - sendtemperaturetime) >= TEMPERATURE) {
+		sendtemperaturetime = now;
+     getTemperature();
+    
+}
+    
+  
 }
 
 void pushToSend(String sendstr){
@@ -205,7 +234,7 @@ if(classType=10){
      lightstatus=lightarr[interNum-1].getStatus();
       Serial.println(lightstatus);
        //pushToSend("3");
-    //if (client.connected()) client.send("r_10_3_3_3");
+      //if (client.connected()) client.send("r_10_3_3_3");
   }
   else
   {
@@ -214,4 +243,6 @@ if(classType=10){
  
 } 
 }
+
+
 
