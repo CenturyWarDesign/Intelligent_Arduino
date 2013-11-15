@@ -1,4 +1,4 @@
-1/***
+/***
 	hello.ino: Hello World Socket.IO Client for Arduino/Bitlash
 
 	Copyright (C) 2013 Bill Roy
@@ -46,7 +46,7 @@ int sendpollmin=0;
 int sendpollmax=0;
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-char hostname[] = "192.168.1.110";
+char hostname[] = "192.168.1.107";
 int port = 8080; 
 
 // websocket message handler: do something with command from server
