@@ -33,12 +33,8 @@ bool SocketIOClient::connect(char thehostname[], int theport) {
 	client.println(secGameuid);
 	hostname = thehostname;
 	port = theport;
-	return true;
-}
-
-bool SocketIOClient::reconnect(){
-	client.stop();
-	if (!client.connect(hostname, port)) return false;
+	//sendHandshake(hostname);
+	//return readHandshake();
 	return true;
 }
 
@@ -71,12 +67,10 @@ void SocketIOClient::monitor() {
 
 	if (!client.connected()) {
 		connect(hostname, port);
-		delay(6000);
+		delay(1000);
 		if (client.connected()) {
 			Serial.println(F("conniect.ok"));
 		}
-		client.reconnect();
-		return;
 	}
 
 	if (!client.available()) return;

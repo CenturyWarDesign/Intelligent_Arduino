@@ -39,7 +39,6 @@ class SocketIOClient {
 		typedef void (*DataArrivedDelegate)(SocketIOClient client, char *data);
 		bool connect(char hostname[], int port = 80);
         bool connected();
-        bool reconnect();
         void disconnect();
 		void monitor();
 		void setDataArrivedDelegate(DataArrivedDelegate newdataArrivedDelegate);
