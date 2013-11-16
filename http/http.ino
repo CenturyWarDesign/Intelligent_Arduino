@@ -19,7 +19,6 @@ Light light3(11);
 Light light4(12);
 Light light5(13);
 Light lightarr[5]={light1,light2,light3,light4,light5};
-String sendtoserver="";
 //20 is can use ,please send some import message
 int sendPollSize=20;
 String sendPoll[20];
@@ -49,19 +48,12 @@ void getTemperature(){
   Serial.println("gemperature");
   Serial.println(tem);
   char returnstr[]="30_1_00_00";
-//  Serial.println(tem[0]);
-//    Serial.println(tem[1]);
-//      Serial.println(tem[2]);
-//        Serial.println(tem[3]);
-//          Serial.println(tem[4]);
-//  Serial.println(returnstr);
   returnstr[5]=char(tem[0]);
   returnstr[6]=char(tem[1]);
   returnstr[8]=char(tem[3]);
   returnstr[9]=char(tem[4]);
   Serial.println(returnstr);
   client.send(returnstr);
-//  return returnstr;
 }
 
 void setup() {
@@ -75,8 +67,6 @@ void setup() {
         getTemperature();
 	client.setDataArrivedDelegate(ondata);
         client.setSec("7a941492a0dc743544ebc71c89370a61");
-	//if (!client.connect(hostname, port)) Serial.println(F("Not connected."));
-	//if (client.connected()) client.send("Client here!");
 }
 
 #define HELLO_INTERVAL 3000UL
@@ -98,63 +88,67 @@ void monitorBaojing(){
         if(n<700){
             pushToSend("31_1_3_3");
         }
+        
+         pushToSend("40_1_1_1");
   }
   
-//alert in house 
+    //发送温度数据
+  if ((now - sendtemperaturetime) >= TEMPERATURE) {
+        sendtemperaturetime = now;
+       getTemperature();
+  } 
+  
 }
 
 void loop() {
-        if(!client.connected()){
-          delay(1000);
-          client.disconnect();
-          if (!client.connect(hostname, port)) Serial.println(F("Not connected."));
-        }
-        monitorBaojing();
-        getSerialValue();
-	client.monitor();
-	unsigned long now = millis();
-	if ((now - lasthello) >= HELLO_INTERVAL) {
-		lasthello = now;
-  	if (client.connected()&&sendpollmax!=sendpollmin) 
-          {
-                char tem[sendPoll[sendpollmin].length()];
-                int i = 0;
-                Serial.println("=");
-                  for(; i < sendPoll[sendpollmin].length() ; i++)
-                  {
-                    //Serial.println("=");
-                    Serial.println((int)sendPoll[sendpollmin].charAt(i));
-                    tem[i]=(int)sendPoll[sendpollmin].charAt(i);
-                    //tem[i]=sendPoll[sendpollmin][i];
-                  }
-                  Serial.println("=");
-                //tem[i]=char(13);
-              client.send(tem);
-              
-              sendPoll[sendpollmin]="";
-              sendpollmin++;
-              if(sendpollmin>=sendPollSize){
-                  sendpollmin=0;
-               }
-            }
-	}
-if ((now - sendtemperaturetime) >= TEMPERATURE) {
-		sendtemperaturetime = now;
-     getTemperature();
-    
-}
-    
+    if(!client.connected()){
+      delay(1000);
+      client.disconnect();
+      if (!client.connect(hostname, port)) Serial.println(F("Not connected."));
+    }
   
+   //pushToSend("40_2_1_1");
+   pushToSendToServer();
+   getSerialValue();
+   client.monitor();
+  //发送一些监控数据及温度数据
+   monitorBaojing();
 }
 
+ //改变发送策略，只有二十个条目池，把最远一个给更新掉
 void pushToSend(String sendstr){
-  sendPoll[sendpollmax]=sendstr;
-   sendpollmax++;
-  if(sendpollmax>=sendPollSize){
-    sendpollmax=0;
-  }
-  //sendtoserver=sendstr;
+  sendPoll[sendpollmax%20]=sendstr;
+  sendpollmax++;
 }
+
+//发送一些延时发送数据，保证通路正常
+void pushToSendToServer(){
+      unsigned long now = millis();
+      if ((now - lasthello) >= HELLO_INTERVAL) {
+	 lasthello = now;
+	 if (client.connected()&&sendpollmax!=sendpollmin) {
+          int temReadytoSend=sendpollmin%20;
+            if(sendPoll[temReadytoSend].length()!=0)
+            {
+            char tem[sendPoll[temReadytoSend].length()];
+            int i = 0;
+            for(; i < sendPoll[temReadytoSend].length() ; i++){
+              tem[i]=(int)sendPoll[temReadytoSend].charAt(i);
+            }
+          client.send(tem);
+          Serial.println("sendpoolmin:");
+          Serial.println(sendpollmin);
+          Serial.println(tem);
+          Serial.println("sendpoolmax:");
+          Serial.println(sendpollmax);
+          sendPoll[temReadytoSend]="";
+          }
+          sendpollmin++;
+        }
+      }
+}
+
+
 
 void getSerialValue(){
  /* 当串口有数据的时候，将数据拼接到变量comdata */
@@ -183,8 +177,14 @@ void inputTostring(){
       }
     }
     classType=numdata[0];interNum=numdata[1];oprate=numdata[2];data=numdata[3];
-    
+    //Serial.println(classType);
+    //Serial.println(interNum);
+    //Serial.println(oprate);
+    //Serial.println(data);
+    if(classType>0)
+    {
     commandcontrol();
+    }
     mark = 0;
     j=0;
     comdata = String("");
@@ -194,45 +194,33 @@ void inputTostring(){
   }
 }
 void commandcontrol(){
- int lightstatus;
+int lightstatus;
 if(classType=10){
   if(oprate==1){
     digitalWrite(lightarr[interNum-1].getInter(),HIGH);
     lightarr[interNum-1].open();
      lightstatus=lightarr[interNum-1].getStatus();
     Serial.println(lightstatus);
-    //pushToSend("1");
     if (client.connected()) 
     {
       client.send("r_10_1_3_3");
     }
-      else
-      {
-        //pushToSend("r_10_1_3_3");
-      }
   }
   else if(oprate==0)
   {
       digitalWrite(lightarr[interNum-1].getInter(),LOW);
       lightarr[interNum-1].close();
-       lightstatus=lightarr[interNum-1].getStatus();
-        Serial.println(lightstatus);
-       //pushToSend("2");
-       if (client.connected())
+      lightstatus=lightarr[interNum-1].getStatus();
+      Serial.println(lightstatus);
+      if (client.connected())
       {
         client.send("r_10_2_3_3");
-      }
-      else
-      {
-        //pushToSend("r_10_2_3_3");
       }
   }
   else if(oprate==2)
   {
      lightstatus=lightarr[interNum-1].getStatus();
       Serial.println(lightstatus);
-       //pushToSend("3");
-      //if (client.connected()) client.send("r_10_3_3_3");
   }
   else
   {
@@ -241,6 +229,3 @@ if(classType=10){
  
 } 
 }
-
-
-
