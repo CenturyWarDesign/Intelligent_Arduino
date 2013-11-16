@@ -1,23 +1,4 @@
-/***
-	hello.ino: Hello World Socket.IO Client for Arduino/Bitlash
 
-	Copyright (C) 2013 Bill Roy
-	MIT license: see LICENSE file.
-
-	This sketch listens for a Bitlash command from a socket.io server and
-	executes the command, returning its output to the server over the websocket.
-	
-	For testing, you will find a companion socket.io server in the file 
-	index.js in the same directory.
-
-	Run the server ("node index.js"), then boot up the Arduino with this sketch on it.	
-	Commands you type on the server console will be executed on the Arduino, 
-	and the resulting Bitlash output will be displayed on the server console.
-
-	You will need to adjust the hostname and port below to match your network.
-	By default the server runs on port 3000.
-
-***/
 #include "SocketIOClient.h"
 #include "Ethernet.h"
 #include "SPI.h"
@@ -46,7 +27,7 @@ int sendpollmin=0;
 int sendpollmax=0;
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-char hostname[] = "192.168.1.107";
+char hostname[] = "192.168.1.31";
 int port = 8080; 
 
 // websocket message handler: do something with command from server
@@ -85,14 +66,13 @@ void getTemperature(){
 
 void setup() {
 	Serial.begin(9600);
-
 	Ethernet.begin(mac);
         pinMode(light1.getInter(),OUTPUT);
         pinMode(light2.getInter(),OUTPUT);
         pinMode(light3.getInter(),OUTPUT);
         pinMode(light4.getInter(),OUTPUT);
         pinMode(light5.getInter(),OUTPUT);
-getTemperature();
+        getTemperature();
 	client.setDataArrivedDelegate(ondata);
         client.setSec("7a941492a0dc743544ebc71c89370a61");
 	//if (!client.connect(hostname, port)) Serial.println(F("Not connected."));
@@ -102,7 +82,26 @@ getTemperature();
 #define HELLO_INTERVAL 3000UL
 #define TEMPERATURE 20000UL
 unsigned long lasthello;
+unsigned long lasthuoyan;
 unsigned long sendtemperaturetime;
+
+void monitorBaojing(){
+  unsigned long now = millis();
+  
+  int huoyan=A3;
+  int n = 0;
+  if ((now - lasthuoyan) >= HELLO_INTERVAL) {
+		lasthuoyan = now;
+        n=analogRead(huoyan);
+        Serial.println("get huoyan:");
+        Serial.println(n);
+        if(n<700){
+            pushToSend("31_1_3_3");
+        }
+  }
+  
+//alert in house 
+}
 
 void loop() {
         if(!client.connected()){
@@ -110,6 +109,7 @@ void loop() {
           client.disconnect();
           if (!client.connect(hostname, port)) Serial.println(F("Not connected."));
         }
+        monitorBaojing();
         getSerialValue();
 	client.monitor();
 	unsigned long now = millis();
@@ -138,8 +138,6 @@ void loop() {
                }
             }
 	}
-
-
 if ((now - sendtemperaturetime) >= TEMPERATURE) {
 		sendtemperaturetime = now;
      getTemperature();
