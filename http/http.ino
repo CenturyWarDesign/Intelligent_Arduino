@@ -89,7 +89,7 @@ void monitorBaojing(){
             pushToSend("31_1_3_3");
         }
         
-         pushToSend("40_1_1_1");
+         //pushToSend("40_1_1_1");
   }
   
     //发送温度数据
