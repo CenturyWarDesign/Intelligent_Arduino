@@ -31,42 +31,42 @@ int port = 8080;
 
 // websocket message handler: do something with command from server
 void ondata(SocketIOClient client, char *data) {
-	//Serial.print(data);
-        comdata=data;
-        mark=1;
-	Serial.print("comdata:"+comdata);
-        inputTostring();
+    //Serial.print(data);
+    comdata=data;
+    mark=1;
+    Serial.print("comdata:"+comdata);
+    inputTostring();
 
 }
 
 //get current temperature
 void getTemperature(){
-  int n = analogRead(A0);    //读取A0口的电压值
-  float vol= n * (5.0 / 1023.0*100);   //使用浮点数存储温度数据，温度数据由电压值换算得到
-  char tem[5];
-  dtostrf(vol,2,2,tem);
-  Serial.println("gemperature");
-  Serial.println(tem);
-  char returnstr[]="30_1_00_00";
-  returnstr[5]=char(tem[0]);
-  returnstr[6]=char(tem[1]);
-  returnstr[8]=char(tem[3]);
-  returnstr[9]=char(tem[4]);
-  Serial.println(returnstr);
-  client.send(returnstr);
+    int n = analogRead(A0);    //读取A0口的电压值
+    float vol= n * (5.0 / 1023.0*100);   //使用浮点数存储温度数据，温度数据由电压值换算得到
+    char tem[5];
+    dtostrf(vol,2,2,tem);
+    Serial.println("gemperature");
+    Serial.println(tem);
+    char returnstr[]="30_1_00_00";
+    returnstr[5]=char(tem[0]);
+    returnstr[6]=char(tem[1]);
+    returnstr[8]=char(tem[3]);
+    returnstr[9]=char(tem[4]);
+    Serial.println(returnstr);
+    client.send(returnstr);
 }
 
 void setup() {
-	Serial.begin(9600);
-	Ethernet.begin(mac);
-        pinMode(light1.getInter(),OUTPUT);
-        pinMode(light2.getInter(),OUTPUT);
-        pinMode(light3.getInter(),OUTPUT);
-        pinMode(light4.getInter(),OUTPUT);
-        pinMode(light5.getInter(),OUTPUT);
-        getTemperature();
-	client.setDataArrivedDelegate(ondata);
-        client.setSec("7a941492a0dc743544ebc71c89370a61");
+    Serial.begin(9600);
+    Ethernet.begin(mac);
+    pinMode(light1.getInter(),OUTPUT);
+    pinMode(light2.getInter(),OUTPUT);
+    pinMode(light3.getInter(),OUTPUT);
+    pinMode(light4.getInter(),OUTPUT);
+    pinMode(light5.getInter(),OUTPUT);
+    getTemperature();
+    client.setDataArrivedDelegate(ondata);
+    client.setSec("7a941492a0dc743544ebc71c89370a61");
 }
 
 #define HELLO_INTERVAL 3000UL
@@ -76,156 +76,159 @@ unsigned long lasthuoyan;
 unsigned long sendtemperaturetime;
 
 void monitorBaojing(){
-  unsigned long now = millis();
-  
-  int huoyan=A3;
-  int n = 0;
-  if ((now - lasthuoyan) >= HELLO_INTERVAL) {
-		lasthuoyan = now;
-        n=analogRead(huoyan);
-        Serial.println("get huoyan:");
-        Serial.println(n);
-        if(n<700){
-            pushToSend("31_1_3_3");
+    unsigned long now = millis();
+
+    int huoyan=A3;
+    int n = 0;
+    if ((now - lasthuoyan) >= HELLO_INTERVAL) {
+       lasthuoyan = now;
+       n=analogRead(huoyan);
+       Serial.println("get huoyan:");
+       Serial.println(n);
+       if(n<700){
+        pushToSend("31_1_3_3");
         }
-        
-         //pushToSend("40_1_1_1");
-  }
-  
+    
+        //pushToSend("40_1_1_1");
+    }
+
     //发送温度数据
-  if ((now - sendtemperaturetime) >= TEMPERATURE) {
+    if ((now - sendtemperaturetime) >= TEMPERATURE) {
         sendtemperaturetime = now;
-       getTemperature();
-  } 
-  
+        getTemperature();
+    } 
+
 }
 
 void loop() {
     if(!client.connected()){
-      delay(1000);
-      client.disconnect();
-      if (!client.connect(hostname, port)) Serial.println(F("Not connected."));
+        delay(1000);
+        client.disconnect();
+        if (!client.connect(hostname, port)) Serial.println(F("Not connected."));
     }
-  
-   //pushToSend("40_2_1_1");
-   pushToSendToServer();
-   getSerialValue();
-   client.monitor();
-  //发送一些监控数据及温度数据
-   monitorBaojing();
+
+    //pushToSend("40_2_1_1");
+    pushToSendToServer();
+    getSerialValue();
+    client.monitor();
+    //发送一些监控数据及温度数据
+    monitorBaojing();
 }
 
- //改变发送策略，只有二十个条目池，把最远一个给更新掉
+//改变发送策略，只有二十个条目池，把最远一个给更新掉
 void pushToSend(String sendstr){
-  sendPoll[sendpollmax%20]=sendstr;
-  sendpollmax++;
+    sendPoll[sendpollmax%20]=sendstr;
+    sendpollmax++;
 }
 
 //发送一些延时发送数据，保证通路正常
 void pushToSendToServer(){
-      unsigned long now = millis();
-      if ((now - lasthello) >= HELLO_INTERVAL) {
-	 lasthello = now;
-	 if (client.connected()&&sendpollmax!=sendpollmin) {
-          int temReadytoSend=sendpollmin%20;
+    unsigned long now = millis();
+    if ((now - lasthello) >= HELLO_INTERVAL) {
+        lasthello = now;
+        if (client.connected()&&sendpollmax!=sendpollmin) {
+            int temReadytoSend=sendpollmin%20;
             if(sendPoll[temReadytoSend].length()!=0)
             {
-            char tem[sendPoll[temReadytoSend].length()];
-            int i = 0;
-            for(; i < sendPoll[temReadytoSend].length() ; i++){
-              tem[i]=(int)sendPoll[temReadytoSend].charAt(i);
+                char tem[sendPoll[temReadytoSend].length()];
+                int i = 0;
+                for(; i < sendPoll[temReadytoSend].length() ; i++){
+                    tem[i]=(int)sendPoll[temReadytoSend].charAt(i);
+                }
+                client.send(tem);
+                Serial.println("sendpoolmin:");
+                Serial.println(sendpollmin);
+                Serial.println(tem);
+                Serial.println("sendpoolmax:");
+                Serial.println(sendpollmax);
+                sendPoll[temReadytoSend]="";
             }
-          client.send(tem);
-          Serial.println("sendpoolmin:");
-          Serial.println(sendpollmin);
-          Serial.println(tem);
-          Serial.println("sendpoolmax:");
-          Serial.println(sendpollmax);
-          sendPoll[temReadytoSend]="";
-          }
-          sendpollmin++;
+            sendpollmin++;
         }
-      }
+    }
 }
 
 
 
 void getSerialValue(){
- /* 当串口有数据的时候，将数据拼接到变量comdata */
-  while (Serial.available() > 0)
-  {
-    comdata += char(Serial.read());
-    delay(2);
-    mark = 1;
-  }
-  inputTostring();
+    /* 当串口有数据的时候，将数据拼接到变量comdata */
+    while (Serial.available() > 0)
+    {
+        comdata += char(Serial.read());
+        delay(2);
+        mark = 1;
+    }
+    inputTostring();
 }
+
+
 void inputTostring(){
-  if(mark == 1)
-  {
-    Serial.print("You inputed : ");
-    Serial.println(comdata);
-    for(int i = 0; i < comdata.length() ; i++)
+    if(mark == 1)
     {
-      if(comdata[i] == '_' || comdata[i] == 0x10 || comdata[i] == 0x13)
-      {
-        j++;
-      }
-      else
-      {
-        numdata[j] = numdata[j] * 10 + (comdata[i] - '0');
-      }
+        Serial.print("You inputed : ");
+        Serial.println(comdata);
+        for(int i = 0; i < comdata.length() ; i++)
+        {
+            if(comdata[i] == '_' || comdata[i] == 0x10 || comdata[i] == 0x13)
+            { 
+                j++;
+            }
+            else
+            {
+                numdata[j] = numdata[j] * 10 + (comdata[i] - '0');
+            }
+        }
+        classType=numdata[0];interNum=numdata[1];oprate=numdata[2];data=numdata[3];
+        //Serial.println(classType);
+        //Serial.println(interNum);
+        //Serial.println(oprate);
+        //Serial.println(data);
+        if(classType>0)
+        {
+            commandcontrol();
+        }
+        mark = 0;
+        j=0;
+        comdata = String("");
+        for(int i=0;i<7;i++){
+          numdata[i]=0;
+        }
     }
-    classType=numdata[0];interNum=numdata[1];oprate=numdata[2];data=numdata[3];
-    //Serial.println(classType);
-    //Serial.println(interNum);
-    //Serial.println(oprate);
-    //Serial.println(data);
-    if(classType>0)
-    {
-    commandcontrol();
-    }
-    mark = 0;
-    j=0;
-    comdata = String("");
-    for(int i=0;i<7;i++){
-      numdata[i]=0;
-    }
-  }
 }
+
+
 void commandcontrol(){
-int lightstatus;
-if(classType=10){
-  if(oprate==1){
-    digitalWrite(lightarr[interNum-1].getInter(),HIGH);
-    lightarr[interNum-1].open();
-     lightstatus=lightarr[interNum-1].getStatus();
-    Serial.println(lightstatus);
+    int lightstatus;
+    char buffer[12];
+    sprintf(buffer,"r_%d_%d_%d_%d",classType,interNum,oprate,data); 
+    if(classType=10){
+        if(oprate==1){
+            digitalWrite(lightarr[interNum-1].getInter(),HIGH);
+            lightarr[interNum-1].open();
+            lightstatus=lightarr[interNum-1].getStatus();
+            Serial.println(lightstatus);
+        }else if(oprate==0)
+        {
+            digitalWrite(lightarr[interNum-1].getInter(),LOW);
+            lightarr[interNum-1].close();
+            lightstatus=lightarr[interNum-1].getStatus();
+            Serial.println(lightstatus);
+        }else if(oprate==2)
+        {
+           lightstatus=lightarr[interNum-1].getStatus();
+           Serial.println(lightstatus);
+        }else
+        {
+            Serial.println("operate undefine:"+oprate);
+        }
+
+    }    
     if (client.connected()) 
     {
-      client.send("r_10_1_3_3");
+
+        client.send(buffer);
+        Serial.println("feedback:");
+        Serial.println(buffer);
     }
-  }
-  else if(oprate==0)
-  {
-      digitalWrite(lightarr[interNum-1].getInter(),LOW);
-      lightarr[interNum-1].close();
-      lightstatus=lightarr[interNum-1].getStatus();
-      Serial.println(lightstatus);
-      if (client.connected())
-      {
-        client.send("r_10_2_3_3");
-      }
-  }
-  else if(oprate==2)
-  {
-     lightstatus=lightarr[interNum-1].getStatus();
-      Serial.println(lightstatus);
-  }
-  else
-  {
-    Serial.println("operate undefine:"+oprate);
-  }
- 
-} 
+
 }
