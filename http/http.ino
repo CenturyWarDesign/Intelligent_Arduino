@@ -28,8 +28,8 @@ int sendpollmin=0;
 int sendpollmax=0;
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-char hostname[] = "192.168.1.111";
-int port = 8686; 
+char hostname[] = "192.168.1.31";
+int port = 8080; 
 
 // websocket message handler: do something with command from server
 void ondata(SocketIOClient client, char *data) {
@@ -76,11 +76,13 @@ void setup() {
 #define HELLO_INTERVAL 3000UL
 #define TEMPERATURE 20000UL
 #define SENDRENTI 30000UL
+#define ONLINETIME 5000UL
 unsigned long lasthello;
 unsigned long lasthuoyan;
 unsigned long lastlight;
 unsigned long lastrenti;
 unsigned long sendtemperaturetime;
+unsigned long lastonline;
 
 unsigned long lastSendRenti;
 
@@ -128,18 +130,27 @@ void monitorBaojing(){
 
 void loop() {
     if(!client.connected()){
-        delay(1000);
-        client.disconnect();
+      unsigned long now = millis();
+      if(lastonline==0)
+      {
+        lastonline=now+ONLINETIME;
+      }
+        if (now>lastonline) {
+    	lastonline = 0;
+            Serial.println("try on line");
+              client.disconnect();
         if (!client.connect(hostname, port)) Serial.println(F("Not connected."));
+        }
+      
     }
-  
+//  
    //pushToSend("40_2_1_1");
-  // pushToSendToServer();
+   pushToSendToServer();
    getSerialValue();
-   //client.monitor();
+   client.monitor();
   //发送一些监控数据及温度数据
-  // monitorBaojing();
-  // monitorLight();
+   monitorBaojing();
+   monitorLight();
 
 }
 
