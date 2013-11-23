@@ -13,12 +13,14 @@ int oprate;
 int data;
 int j=0;
 int mark=0;
-Light light1(9);
-Light light2(10);
-Light light3(11);
-Light light4(12);
-Light light5(13);
-Light lightarr[5]={light1,light2,light3,light4,light5};
+Light light1(6);
+Light light2(7);
+Light light3(8);
+Light light4(9);
+Light light5(10);
+Light light6(11);
+Light light7(12);
+Light lightarr[7]={light1,light2,light3,light4,light5,light6,light7};
 //20 is can use ,please send some import message
 int sendPollSize=20;
 String sendPoll[20];
@@ -26,8 +28,8 @@ int sendpollmin=0;
 int sendpollmax=0;
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-char hostname[] = "192.168.1.31";
-int port = 8080; 
+char hostname[] = "192.168.1.111";
+int port = 8686; 
 
 // websocket message handler: do something with command from server
 void ondata(SocketIOClient client, char *data) {
@@ -57,36 +59,60 @@ void getTemperature(){
 }
 
 void setup() {
-    Serial.begin(9600);
-    Ethernet.begin(mac);
-    pinMode(light1.getInter(),OUTPUT);
-    pinMode(light2.getInter(),OUTPUT);
-    pinMode(light3.getInter(),OUTPUT);
-    pinMode(light4.getInter(),OUTPUT);
-    pinMode(light5.getInter(),OUTPUT);
-    getTemperature();
-    client.setDataArrivedDelegate(ondata);
-    client.setSec("7a941492a0dc743544ebc71c89370a61");
+	Serial.begin(9600);
+	Ethernet.begin(mac);
+        pinMode(light1.getInter(),OUTPUT);
+        pinMode(light2.getInter(),OUTPUT);
+        pinMode(light3.getInter(),OUTPUT);
+        pinMode(light4.getInter(),OUTPUT);
+        pinMode(light5.getInter(),OUTPUT);
+        pinMode(light6.getInter(),OUTPUT);
+        pinMode(light7.getInter(),OUTPUT);
+//        getTemperature();
+	client.setDataArrivedDelegate(ondata);
+        client.setSec("7a941492a0dc743544ebc71c89370a61");
 }
 
 #define HELLO_INTERVAL 3000UL
 #define TEMPERATURE 20000UL
+#define SENDRENTI 30000UL
 unsigned long lasthello;
 unsigned long lasthuoyan;
+unsigned long lastlight;
+unsigned long lastrenti;
 unsigned long sendtemperaturetime;
 
-void monitorBaojing(){
-    unsigned long now = millis();
+unsigned long lastSendRenti;
 
-    int huoyan=A3;
-    int n = 0;
-    if ((now - lasthuoyan) >= HELLO_INTERVAL) {
-       lasthuoyan = now;
-       n=analogRead(huoyan);
-       Serial.println("get huoyan:");
-       Serial.println(n);
-       if(n<700){
-        pushToSend("31_1_3_3");
+void monitorLight(){
+  unsigned long now = millis();
+  
+  int light=A1;
+  int n = 0;
+  if ((now - lastlight) >= HELLO_INTERVAL) {
+		lastlight = now;
+        n=analogRead(light);
+        Serial.println("get light:");
+        Serial.println(n);
+  }
+
+}
+void monitorBaojing(){
+
+  unsigned long now = millis();
+  
+  int renti=A2;
+  int n = 0;
+  if ((now - lastrenti) >= HELLO_INTERVAL) {
+		lastrenti = now;
+        n=digitalRead(renti);
+        Serial.println("get renti:");
+        Serial.println(n);
+        if(n==1){
+          if((now - lastSendRenti) >= SENDRENTI) {
+		lastSendRenti = now;
+                 pushToSend("32_1_3_3");
+          }
         }
     
         //pushToSend("40_1_1_1");
@@ -106,13 +132,15 @@ void loop() {
         client.disconnect();
         if (!client.connect(hostname, port)) Serial.println(F("Not connected."));
     }
+  
+   //pushToSend("40_2_1_1");
+  // pushToSendToServer();
+   getSerialValue();
+   //client.monitor();
+  //发送一些监控数据及温度数据
+  // monitorBaojing();
+  // monitorLight();
 
-    //pushToSend("40_2_1_1");
-    pushToSendToServer();
-    getSerialValue();
-    client.monitor();
-    //发送一些监控数据及温度数据
-    monitorBaojing();
 }
 
 //改变发送策略，只有二十个条目池，把最远一个给更新掉
