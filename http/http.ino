@@ -13,13 +13,13 @@ int oprate;
 int data;
 int j=0;
 int mark=0;
-Light light1(6);
-Light light2(7);
-Light light3(8);
-Light light4(9);
-Light light5(10);
-Light light6(11);
-Light light7(12);
+Light light1(11);
+Light light2(5);
+Light light3(6);
+Light light4(7);
+Light light5(8);
+Light light6(9);
+Light light7(10);
 Light lightarr[7]={light1,light2,light3,light4,light5,light6,light7};
 //20 is can use ,please send some import message
 int sendPollSize=20;
@@ -62,21 +62,29 @@ void setup() {
 	Serial.begin(9600);
 	Ethernet.begin(mac);
         pinMode(light1.getInter(),OUTPUT);
+//        digitalWrite(light1.getInter(),LOW);
         pinMode(light2.getInter(),OUTPUT);
+//         digitalWrite(light2.getInter(),LOW);
         pinMode(light3.getInter(),OUTPUT);
+//                digitalWrite(light3.getInter(),LOW);
         pinMode(light4.getInter(),OUTPUT);
+//                digitalWrite(light4.getInter(),LOW);
         pinMode(light5.getInter(),OUTPUT);
+//                digitalWrite(light5.getInter(),LOW);
         pinMode(light6.getInter(),OUTPUT);
+//                digitalWrite(light6.getInter(),LOW);
         pinMode(light7.getInter(),OUTPUT);
+//                digitalWrite(light7.getInter(),LOW);
 //        getTemperature();
 	client.setDataArrivedDelegate(ondata);
-        client.setSec("7a941492a0dc743544ebc71c89370a61");
+        client.setSec("7a941492a0dc743544ebc71c89370a62");
+   Serial.println("set up finish");
 }
 
 #define HELLO_INTERVAL 3000UL
 #define TEMPERATURE 20000UL
 #define SENDRENTI 30000UL
-#define ONLINETIME 5000UL
+#define ONLINETIME 1000UL
 unsigned long lasthello;
 unsigned long lasthuoyan;
 unsigned long lastlight;
@@ -129,24 +137,20 @@ void monitorBaojing(){
 }
 
 void loop() {
+//   Serial.println(millis());
     if(!client.connected()){
       unsigned long now = millis();
-      if(lastonline==0)
-      {
-        lastonline=now+ONLINETIME;
-      }
-        if (now>lastonline) {
-    	lastonline = 0;
-            Serial.println("try on line");
-              client.disconnect();
-        if (!client.connect(hostname, port)) Serial.println(F("Not connected."));
-        }
-      
+      delay(500);
+      Serial.println("try on line");
+        client.disconnect();
+       if (!client.connect(hostname, port)) Serial.println(F("Not connected."));
+        Serial.println("try on line finish");
     }
 //  
    //pushToSend("40_2_1_1");
    pushToSendToServer();
    getSerialValue();
+  delay(300);
    client.monitor();
   //发送一些监控数据及温度数据
    monitorBaojing();
@@ -264,7 +268,6 @@ void commandcontrol(){
     }    
     if (client.connected()) 
     {
-
         client.send(buffer);
         Serial.println("feedback:");
         Serial.println(buffer);
