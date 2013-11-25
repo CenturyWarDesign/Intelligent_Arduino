@@ -13,22 +13,26 @@ int oprate;
 int data;
 int j=0;
 int mark=0;
-Light light1(11);
+Light light1(4);
 Light light2(5);
 Light light3(6);
 Light light4(7);
 Light light5(8);
 Light light6(9);
-Light light7(10);
-Light lightarr[7]={light1,light2,light3,light4,light5,light6,light7};
+Light lightarr[6]={light1,light2,light3,light4,light5,light6};
 //20 is can use ,please send some import message
 int sendPollSize=20;
 String sendPoll[20];
 int sendpollmin=0;
 int sendpollmax=0;
 
-byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-char hostname[] = "192.168.1.31";
+byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xCD };
+//char hostname[] = "192.168.1.31";
+char hostname[] = "42.121.123.185";
+//char sec[]="7g941492a0dc743544ebc71c89370a62";
+char sec[]="7a941492a0dc743544ebc71c89370a62";
+//char sec[]="7a941492a0dc743544ebc71c89370a63";
+
 int port = 8080; 
 
 // websocket message handler: do something with command from server
@@ -73,11 +77,9 @@ void setup() {
 //                digitalWrite(light5.getInter(),LOW);
         pinMode(light6.getInter(),OUTPUT);
 //                digitalWrite(light6.getInter(),LOW);
-        pinMode(light7.getInter(),OUTPUT);
-//                digitalWrite(light7.getInter(),LOW);
 //        getTemperature();
 	client.setDataArrivedDelegate(ondata);
-        client.setSec("7a941492a0dc743544ebc71c89370a62");
+        client.setSec(sec);
    Serial.println("set up finish");
 }
 
