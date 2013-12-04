@@ -1,3 +1,6 @@
+
+#include <IRremoteInt.h>
+
 /*
  * IRRemote 紅外線遙控教學
  *   範例 1.1: 接收紅外線

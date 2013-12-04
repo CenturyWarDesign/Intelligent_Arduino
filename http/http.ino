@@ -27,10 +27,13 @@ int sendpollmin=0;
 int sendpollmax=0;
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xCD };
-//char hostname[] = "192.168.1.31";
-char hostname[] = "42.121.123.185";
+IPAddress ip(192,168,1,199);
+char hostname[] = "192.168.1.31";
+//char hostname[] = "42.121.123.185";
+//char hostname[] = "192.168.1.107";
 //char sec[]="7g941492a0dc743544ebc71c89370a62";
-char sec[]="7a941492a0dc743544ebc71c89370a62";
+//lijinpeng
+char sec[]="7b941492a0dc743544ebc71c89370a61";
 //char sec[]="7a941492a0dc743544ebc71c89370a63";
 
 int port = 8080; 
@@ -64,7 +67,7 @@ void getTemperature(){
 
 void setup() {
 	Serial.begin(9600);
-	Ethernet.begin(mac);
+	Ethernet.begin(mac,ip);
         pinMode(light1.getInter(),OUTPUT);
 //        digitalWrite(light1.getInter(),LOW);
         pinMode(light2.getInter(),OUTPUT);
@@ -133,7 +136,7 @@ void monitorBaojing(){
     //发送温度数据
     if ((now - sendtemperaturetime) >= TEMPERATURE) {
         sendtemperaturetime = now;
-        getTemperature();
+//        getTemperature();
     } 
 
 }
