@@ -38,6 +38,9 @@ char sec[]="7b941492a0dc743544ebc71c89370a61";
 
 int port = 8080; 
 
+//rember pmw value
+int pmwvalue;
+
 // websocket message handler: do something with command from server
 void ondata(SocketIOClient client, char *data) {
     //Serial.print(data);
@@ -49,6 +52,7 @@ void ondata(SocketIOClient client, char *data) {
 }
 
 void setup() {
+  pmwvalue=0;
   Serial.println("set up begin");
 	Serial.begin(9600);
 	Ethernet.begin(mac);
@@ -85,7 +89,6 @@ unsigned long lastSendRenti;
 
 void monitorLight(){
   unsigned long now = millis();
-  
   int light=A1;
   int n = 0;
   if ((now - lastlight) >= HELLO_INTERVAL) {
@@ -94,12 +97,9 @@ void monitorLight(){
         Serial.println("get light:");
         Serial.println(n);
   }
-
 }
 void monitorBaojing(){
-
   unsigned long now = millis();
-  
   int renti=A2;
   int n = 0;
   if ((now - lastrenti) >= HELLO_INTERVAL) {
@@ -215,10 +215,10 @@ void inputTostring(){
             }
         }
         classType=numdata[0];interNum=numdata[1];oprate=numdata[2];data=numdata[3];
-        //Serial.println(classType);
-        //Serial.println(interNum);
-        //Serial.println(oprate);
-        //Serial.println(data);
+        Serial.println(classType);
+        Serial.println(interNum);
+        Serial.println(oprate);
+        Serial.println(data);
         if(classType>0)
         {
             commandcontrol();
@@ -237,7 +237,7 @@ void commandcontrol(){
     int lightstatus;
     char buffer[12];
     sprintf(buffer,"r_%d_%d_%d_%d",classType,interNum,oprate,data); 
-    if(classType=10){
+    if(classType==10){
         if(oprate==1){
             digitalWrite(lightarr[interNum-1].getInter(),HIGH);
             lightarr[interNum-1].open();
@@ -257,15 +257,20 @@ void commandcontrol(){
         {
             Serial.println("operate undefine:"+oprate);
         }
-
-    }    
+      }
+      else if(classType==20){
+       if(oprate>0){
+             pmwopen(interNum,min(5000,max(100,data)),oprate);
+        }else if(oprate==0){
+            pmwclose(interNum,min(5000,max(100,data)));
+        }
+    }
     if (client.connected()) 
     {
         client.send(buffer);
         Serial.println("feedback:");
         Serial.println(buffer);
     }
-
 }
 
 
@@ -316,3 +321,27 @@ double getTem(void) {
   return celsius;
 }
 
+void pmwopen(int pik,int misocket,int value){
+  for(int i=0;i<misocket;i++){
+      
+      analogWrite(pik,(double)i*(value-pmwvalue)/misocket+pmwvalue);
+//      Serial.println((double)i*(value-pmwvalue)/misocket+pmwvalue);
+//      if((double)i*(value-pmwvalue)/misocket+pmwvalue<value-3)
+//      {
+        delayMicroseconds(100);
+//      }
+  }
+  pmwvalue=value;
+  Serial.println("pmw open");
+}
+void pmwclose(int pik,int misocket){
+  for(int i=0;i<misocket;i++){
+//    if((double)(misocket-i)*255/misocket>0)
+//     {
+    delayMicroseconds(100);
+//     }
+    analogWrite(pik,(double)(misocket-i)*255/misocket);
+    
+  }
+  Serial.println("pmw close");
+}
