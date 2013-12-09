@@ -27,7 +27,7 @@ int sendpollmin=0;
 int sendpollmax=0;
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xCD };
-IPAddress ip(192,168,1,199);
+//IPAddress ip(192,168,1,199);
 char hostname[] = "192.168.1.31";
 //char hostname[] = "42.121.123.185";
 //char hostname[] = "192.168.1.107";
@@ -48,26 +48,10 @@ void ondata(SocketIOClient client, char *data) {
 
 }
 
-//get current temperature
-void getTemperature(){
-    int n = analogRead(A0);    //读取A0口的电压值
-    float vol= n * (5.0 / 1023.0*100);   //使用浮点数存储温度数据，温度数据由电压值换算得到
-    char tem[5];
-    dtostrf(vol,2,2,tem);
-    Serial.println("gemperature");
-    Serial.println(tem);
-    char returnstr[]="30_1_00_00";
-    returnstr[5]=char(tem[0]);
-    returnstr[6]=char(tem[1]);
-    returnstr[8]=char(tem[3]);
-    returnstr[9]=char(tem[4]);
-    Serial.println(returnstr);
-    client.send(returnstr);
-}
-
 void setup() {
+  Serial.println("set up begin");
 	Serial.begin(9600);
-	Ethernet.begin(mac,ip);
+	Ethernet.begin(mac);
         pinMode(light1.getInter(),OUTPUT);
 //        digitalWrite(light1.getInter(),LOW);
         pinMode(light2.getInter(),OUTPUT);
@@ -80,14 +64,14 @@ void setup() {
 //                digitalWrite(light5.getInter(),LOW);
         pinMode(light6.getInter(),OUTPUT);
 //                digitalWrite(light6.getInter(),LOW);
-//        getTemperature();
 	client.setDataArrivedDelegate(ondata);
         client.setSec(sec);
    Serial.println("set up finish");
+   getTem();
 }
 
 #define HELLO_INTERVAL 3000UL
-#define TEMPERATURE 20000UL
+#define TEMPERATURE 60000UL
 #define SENDRENTI 30000UL
 #define ONLINETIME 1000UL
 unsigned long lasthello;
@@ -129,14 +113,18 @@ void monitorBaojing(){
                  pushToSend("32_1_3_3");
           }
         }
-    
-        //pushToSend("40_1_1_1");
     }
 
     //发送温度数据
     if ((now - sendtemperaturetime) >= TEMPERATURE) {
         sendtemperaturetime = now;
-//        getTemperature();
+        //double temputer=getTem();
+          char buffer[6],sendstr[12];
+          double tems=getTem();
+          dtostrf(tems,2,2,buffer);
+          sprintf(sendstr,"30_1_%s_0",buffer);
+           Serial.println(sendstr);
+          pushToSend(sendstr);   
     } 
 
 }
@@ -279,3 +267,52 @@ void commandcontrol(){
     }
 
 }
+
+
+#include <OneWire.h>
+ 
+ 
+OneWire  ds(A0);  // 连接arduino10引脚
+ 
+double getTem(void) {
+  byte i;
+  byte present = 0;
+  byte type_s;
+  byte data[12];
+  byte addr[8];
+  float celsius, fahrenheit;
+  ds.search(addr);
+  ds.reset();
+  ds.select(addr);
+  ds.write(0x44,1);         // start conversion, with parasite power on at the end
+  
+  delay(1000);     // maybe 750ms is enough, maybe not
+  // we might do a ds.depower() here, but the reset will take care of it.
+  
+  present = ds.reset();
+  ds.select(addr);    
+  ds.write(0xBE);         // Read Scratchpad
+ 
+  for ( i = 0; i < 9; i++) {           // we need 9 bytes
+    data[i] = ds.read();
+
+  }
+  unsigned int raw = (data[1] << 8) | data[0];
+  if (type_s) {
+    raw = raw << 3; // 9 bit resolution default
+    if (data[7] == 0x10) {
+      // count remain gives full 12 bit resolution
+      raw = (raw & 0xFFF0) + 12 - data[6];
+    }
+  } else {
+    byte cfg = (data[4] & 0x60);
+    if (cfg == 0x00) raw = raw << 3;  // 9 bit resolution, 93.75 ms
+    else if (cfg == 0x20) raw = raw << 2; // 10 bit res, 187.5 ms
+    else if (cfg == 0x40) raw = raw << 1; // 11 bit res, 375 ms
+    // default is 12 bit resolution, 750 ms conversion time
+  }
+  celsius = (float)raw / 16.0;
+  fahrenheit = celsius * 1.8 + 32.0;
+  return celsius;
+}
+
