@@ -38,6 +38,8 @@ char sec[]="7b941492a0dc743544ebc71c89370a61";
 
 int port = 8080; 
 
+boolean needresert=false;
+
 //rember pmw value
 int pmwvalue;
 
@@ -52,6 +54,7 @@ void ondata(SocketIOClient client, char *data) {
 }
 
 void setup() {
+  needresert=true;
   pmwvalue=0;
   Serial.println("set up begin");
 	Serial.begin(9600);
@@ -138,6 +141,11 @@ void loop() {
         client.disconnect();
        if (!client.connect(hostname, port)) Serial.println(F("Not connected."));
         Serial.println("try on line finish");
+    }
+    
+    if(needresert==true){
+       pushToSend("00_00_00_00");
+       needresert=false;
     }
 //  
    //pushToSend("40_2_1_1");
@@ -260,9 +268,9 @@ void commandcontrol(){
       }
       else if(classType==20){
        if(oprate>0){
-             pmwopen(interNum,min(5000,max(100,data)),oprate);
+             pmwopen(interNum,min(500,max(10,data)),oprate);
         }else if(oprate==0){
-            pmwclose(interNum,min(5000,max(100,data)));
+            pmwclose(interNum,min(500,max(10,data)));
         }
     }
     if (client.connected()) 
@@ -328,7 +336,7 @@ void pmwopen(int pik,int misocket,int value){
 //      Serial.println((double)i*(value-pmwvalue)/misocket+pmwvalue);
 //      if((double)i*(value-pmwvalue)/misocket+pmwvalue<value-3)
 //      {
-        delayMicroseconds(100);
+        delayMicroseconds(1000);
 //      }
   }
   pmwvalue=value;
@@ -338,7 +346,7 @@ void pmwclose(int pik,int misocket){
   for(int i=0;i<misocket;i++){
 //    if((double)(misocket-i)*255/misocket>0)
 //     {
-    delayMicroseconds(100);
+    delayMicroseconds(1000);
 //     }
     analogWrite(pik,(double)(misocket-i)*255/misocket);
     
