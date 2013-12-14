@@ -37,7 +37,6 @@ char sec[]="7b941492a0dc743544ebc71c89370a61";
 //char sec[]="7a941492a0dc743544ebc71c89370a63";
 
 int port = 8080; 
-
 boolean needresert=false;
 
 //rember pmw value
@@ -64,13 +63,38 @@ void gethongwai(){
   Serial.println("get hongwai");
    if (irrecv.decode(&results)) {         // 解碼成功，收到一組紅外線訊號
     // 印到 Serial port  
-    Serial.print("irCode: ");            
+    Serial.print("irCode: ");                
     Serial.print(results.value, HEX);    // 紅外線編碼
+    if (results.decode_type == UNKNOWN) {
+    Serial.print("Unknown encoding: ");
+  } 
+  else if (results.decode_type == NEC) {
+    Serial.print("Decoded NEC: ");
+  } 
+  else if (results.decode_type == SONY) {
+    Serial.print("Decoded SONY: ");
+  } 
+  else if (results.decode_type == RC5) {
+    Serial.print("Decoded RC5: ");
+  } 
+  else if (results.decode_type == RC6) {
+    Serial.print("Decoded RC6: ");
+  }
+  else if (results.decode_type == PANASONIC) {	
+    Serial.print("Decoded PANASONIC - Address: ");
+    Serial.print(results.panasonicAddress,HEX);
+    Serial.print(" Value: ");
+  }
+  else if (results.decode_type == JVC) {
+     Serial.print("Decoded JVC: ");
+  }
     Serial.print(",  bits: ");           
     Serial.println(results.bits);        // 紅外線編碼位元數
     irrecv.resume();                    // 繼續收下一組紅外線訊號        
   }  
 }
+
+
 void setup() {
   needresert=true;
   pmwvalue=0;
@@ -177,7 +201,7 @@ void loop() {
    monitorLight();
    
    
-   delay(300);
+   delay(1000);
 //   for(int i=1;i<1000;i++){
    gethongwai();
 //   delay(2);
