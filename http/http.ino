@@ -5,6 +5,19 @@
 #include <light.h>
 //#include "bitlash.h"
 SocketIOClient client;
+#define HELLO_INTERVAL 3000UL
+#define TEMPERATURE 60000UL
+#define SENDRENTI 30000UL
+#define ONLINETIME 1000UL
+unsigned long lasthello;
+unsigned long lasthuoyan;
+unsigned long lastlight;
+unsigned long lastrenti;
+unsigned long lasthongwai;
+unsigned long sendtemperaturetime;
+unsigned long lastonline;
+
+unsigned long lastSendRenti;
 String comdata = "";
 int numdata[7] ={0};
 int classType;
@@ -21,8 +34,8 @@ Light light5(8);
 Light light6(9);
 Light lightarr[6]={light1,light2,light3,light4,light5,light6};
 //20 is can use ,please send some import message
-int sendPollSize=20;
-String sendPoll[20];
+int sendPollSize=7;
+String sendPoll[7];
 int sendpollmin=0;
 int sendpollmax=0;
 
@@ -35,70 +48,73 @@ char hostname[] = "192.168.1.31";
 //lijinpeng
 char sec[]="7b941492a0dc743544ebc71c89370a61";
 //char sec[]="7a941492a0dc743544ebc71c89370a63";
-
 int port = 8080; 
 boolean needresert=false;
-
-//rember pmw value
 int pmwvalue;
 
 // websocket message handler: do something with command from server
 void ondata(SocketIOClient client, char *data) {
-    //Serial.print(data);
     comdata=data;
     mark=1;
-    Serial.print("comdata:"+comdata);
+//    Serial.print("comdata:"+comdata);
     inputTostring();
-
 }
 
 #include <IRremote.h>                    // 引用 IRRemote 函式庫
-
-const int irReceiverPin = 2;             // 紅外線接收器 OUTPUT 訊號接在 pin 2
-
-IRrecv irrecv(irReceiverPin);            // 定義 IRrecv 物件來接收紅外線訊號
+//const int irReceiverPin = 2;             // 紅外線接收器 OUTPUT 訊號接在 pin 2
+IRrecv irrecv(2);            // 定義 IRrecv 物件來接收紅外線訊號
 decode_results results;  
 
 void gethongwai(){
-  Serial.println("get hongwai");
+   unsigned long now = millis();
+  if ((now - lasthongwai) >= HELLO_INTERVAL) 
+  {
+    lasthongwai = now;
    if (irrecv.decode(&results)) {         // 解碼成功，收到一組紅外線訊號
-    // 印到 Serial port  
-    Serial.print("irCode: ");                
-    Serial.print(results.value, HEX);    // 紅外線編碼
-    if (results.decode_type == UNKNOWN) {
-    Serial.print("Unknown encoding: ");
+    String codetype="";
+  if (results.decode_type == UNKNOWN) {
+      codetype="Unknown";
   } 
   else if (results.decode_type == NEC) {
-    Serial.print("Decoded NEC: ");
+      codetype="NEC";
   } 
   else if (results.decode_type == SONY) {
-    Serial.print("Decoded SONY: ");
+        codetype="SNONY";
   } 
   else if (results.decode_type == RC5) {
-    Serial.print("Decoded RC5: ");
+        codetype="RC5";
   } 
   else if (results.decode_type == RC6) {
-    Serial.print("Decoded RC6: ");
+        codetype="RC6";
   }
   else if (results.decode_type == PANASONIC) {	
-    Serial.print("Decoded PANASONIC - Address: ");
-    Serial.print(results.panasonicAddress,HEX);
-    Serial.print(" Value: ");
+        codetype="PANASONIC";
+//    Serial.print("Decoded PANASONIC - Address: ");
+//    Serial.print(results.panasonicAddress,HEX);
+//    Serial.print(" Value: ");
   }
   else if (results.decode_type == JVC) {
-     Serial.print("Decoded JVC: ");
+        codetype="JVC";
   }
-    Serial.print(",  bits: ");           
-    Serial.println(results.bits);        // 紅外線編碼位元數
+
+//   Serial.println(sendstr);    // 紅外線編碼  
+   char sendstr[30];
+   sprintf(sendstr,"34_%s_%s_0",codetype,results.value,HEX);
+   Serial.println(codetype);    // 紅外線編碼
+   pushToSend(sendstr);
+  
+//    Serial.print(",  bits: ");           
+//    Serial.println(results.bits);        // 紅外線編碼位元數
     irrecv.resume();                    // 繼續收下一組紅外線訊號        
   }  
+  }
 }
 
 
 void setup() {
-  needresert=true;
-  pmwvalue=0;
-  Serial.println("set up begin");
+    needresert=true;
+    pmwvalue=0;
+//  Serial.println("set up begin");
 	Serial.begin(9600);
 	Ethernet.begin(mac);
         pinMode(light1.getInter(),OUTPUT);
@@ -117,42 +133,29 @@ void setup() {
         client.setSec(sec);
    Serial.println("set up finish");
     irrecv.enableIRIn(); 
-   getTem();
+//   getTem();
 }
 
-#define HELLO_INTERVAL 3000UL
-#define TEMPERATURE 60000UL
-#define SENDRENTI 30000UL
-#define ONLINETIME 1000UL
-unsigned long lasthello;
-unsigned long lasthuoyan;
-unsigned long lastlight;
-unsigned long lastrenti;
-unsigned long sendtemperaturetime;
-unsigned long lastonline;
 
-unsigned long lastSendRenti;
 
 void monitorLight(){
   unsigned long now = millis();
-  int light=A1;
   int n = 0;
-  if ((now - lastlight) >= HELLO_INTERVAL) {
+  if ((now - lastlight) >= SENDRENTI) {
 		lastlight = now;
-        n=analogRead(light);
-        Serial.println("get light:");
-        Serial.println(n);
+        n=analogRead(A1);
+        char sendstr[12];
+        sprintf(sendstr,"33_1_%d_0",n);
+        pushToSend(sendstr);
   }
 }
 void monitorBaojing(){
   unsigned long now = millis();
-  int renti=A2;
   int n = 0;
   if ((now - lastrenti) >= HELLO_INTERVAL) {
 		lastrenti = now;
-        n=digitalRead(renti);
+        n=digitalRead(A2);
         Serial.println("get renti:");
-        Serial.println(n);
         if(n==1){
           if((now - lastSendRenti) >= SENDRENTI) {
 		lastSendRenti = now;
@@ -164,12 +167,10 @@ void monitorBaojing(){
     //发送温度数据
     if ((now - sendtemperaturetime) >= TEMPERATURE) {
         sendtemperaturetime = now;
-        //double temputer=getTem();
-          char buffer[6],sendstr[12];
+                  char buffer[6],sendstr[12];
           double tems=getTem();
           dtostrf(tems,2,2,buffer);
           sprintf(sendstr,"30_1_%s_0",buffer);
-           Serial.println(sendstr);
           pushToSend(sendstr);   
     } 
 
@@ -179,8 +180,8 @@ void loop() {
 //   Serial.println(millis());
     if(!client.connected()){
       unsigned long now = millis();
-      delay(500);
-      Serial.println("try on line");
+        delay(500);
+        Serial.println("try on line");
         client.disconnect();
        if (!client.connect(hostname, port)) Serial.println(F("Not connected."));
         Serial.println("try on line finish");
@@ -190,28 +191,21 @@ void loop() {
        pushToSend("00_00_00_00");
        needresert=false;
     }
-//  
+    
    //pushToSend("40_2_1_1");
    pushToSendToServer();
    getSerialValue();
- 
+   
    client.monitor();
   //发送一些监控数据及温度数据
    monitorBaojing();
    monitorLight();
-   
-   
    delay(1000);
-//   for(int i=1;i<1000;i++){
-   gethongwai();
-//   delay(2);
-//   }
-//   delay(100);
 }
 
 //改变发送策略，只有二十个条目池，把最远一个给更新掉
 void pushToSend(String sendstr){
-    sendPoll[sendpollmax%20]=sendstr;
+    sendPoll[sendpollmax%sendPollSize]=sendstr;
     sendpollmax++;
 }
 
@@ -221,7 +215,7 @@ void pushToSendToServer(){
     if ((now - lasthello) >= HELLO_INTERVAL) {
         lasthello = now;
         if (client.connected()&&sendpollmax!=sendpollmin) {
-            int temReadytoSend=sendpollmin%20;
+            int temReadytoSend=sendpollmin%sendPollSize;
             if(sendPoll[temReadytoSend].length()!=0)
             {
                 char tem[sendPoll[temReadytoSend].length()];
@@ -230,10 +224,10 @@ void pushToSendToServer(){
                     tem[i]=(int)sendPoll[temReadytoSend].charAt(i);
                 }
                 client.send(tem);
-                Serial.println("sendpoolmin:");
-                Serial.println(sendpollmin);
-                Serial.println(tem);
-                Serial.println("sendpoolmax:");
+//                Serial.println("sendpoolmin:");
+//                Serial.println(sendpollmin);
+//                Serial.println(tem);
+//                Serial.println("sendpoolmax:");
                 Serial.println(sendpollmax);
                 sendPoll[temReadytoSend]="";
             }
@@ -316,17 +310,22 @@ void commandcontrol(){
             Serial.println("operate undefine:"+oprate);
         }
       }
-      else if(classType==20){
+    else if(classType==20){
        if(oprate>0){
              pmwopen(interNum,min(500,max(10,data)),oprate);
         }else if(oprate==0){
             pmwclose(interNum,min(500,max(10,data)));
         }
     }
+    else if(classType==34){
+//      Serial.println("get hongwai");
+//         gethongwai();
+    }
+    
     if (client.connected()) 
     {
         client.send(buffer);
-        Serial.println("feedback:");
+//        Serial.println("feedback:");
         Serial.println(buffer);
     }
 }
@@ -381,25 +380,16 @@ double getTem(void) {
 
 void pmwopen(int pik,int misocket,int value){
   for(int i=0;i<misocket;i++){
-      
-      analogWrite(pik,(double)i*(value-pmwvalue)/misocket+pmwvalue);
-//      Serial.println((double)i*(value-pmwvalue)/misocket+pmwvalue);
-//      if((double)i*(value-pmwvalue)/misocket+pmwvalue<value-3)
-//      {
-        delayMicroseconds(1000);
-//      }
+   analogWrite(pik,(double)i*(value-pmwvalue)/misocket+pmwvalue);
+   delay(10);
   }
   pmwvalue=value;
   Serial.println("pmw open");
 }
 void pmwclose(int pik,int misocket){
   for(int i=0;i<misocket;i++){
-//    if((double)(misocket-i)*255/misocket>0)
-//     {
-    delayMicroseconds(1000);
-//     }
+    delay(10);
     analogWrite(pik,(double)(misocket-i)*255/misocket);
-    
   }
   Serial.println("pmw close");
 }
