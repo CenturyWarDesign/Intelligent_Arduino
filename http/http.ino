@@ -53,6 +53,24 @@ void ondata(SocketIOClient client, char *data) {
 
 }
 
+#include <IRremote.h>                    // 引用 IRRemote 函式庫
+
+const int irReceiverPin = 2;             // 紅外線接收器 OUTPUT 訊號接在 pin 2
+
+IRrecv irrecv(irReceiverPin);            // 定義 IRrecv 物件來接收紅外線訊號
+decode_results results;  
+
+void gethongwai(){
+  Serial.println("get hongwai");
+   if (irrecv.decode(&results)) {         // 解碼成功，收到一組紅外線訊號
+    // 印到 Serial port  
+    Serial.print("irCode: ");            
+    Serial.print(results.value, HEX);    // 紅外線編碼
+    Serial.print(",  bits: ");           
+    Serial.println(results.bits);        // 紅外線編碼位元數
+    irrecv.resume();                    // 繼續收下一組紅外線訊號        
+  }  
+}
 void setup() {
   needresert=true;
   pmwvalue=0;
@@ -74,6 +92,7 @@ void setup() {
 	client.setDataArrivedDelegate(ondata);
         client.setSec(sec);
    Serial.println("set up finish");
+    irrecv.enableIRIn(); 
    getTem();
 }
 
@@ -151,12 +170,19 @@ void loop() {
    //pushToSend("40_2_1_1");
    pushToSendToServer();
    getSerialValue();
-  delay(300);
+ 
    client.monitor();
   //发送一些监控数据及温度数据
    monitorBaojing();
    monitorLight();
-
+   
+   
+   delay(300);
+//   for(int i=1;i<1000;i++){
+   gethongwai();
+//   delay(2);
+//   }
+//   delay(100);
 }
 
 //改变发送策略，只有二十个条目池，把最远一个给更新掉
