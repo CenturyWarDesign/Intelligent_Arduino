@@ -6,7 +6,8 @@
 //#include "bitlash.h"
 SocketIOClient client;
 #define HELLO_INTERVAL 3000UL
-#define TEMPERATURE 60000UL
+#define DEVICE_INTERVAL 1000UL
+#define TEMPERATURE 10000UL
 #define SENDRENTI 30000UL
 #define ONLINETIME 1000UL
 unsigned long lasthello;
@@ -38,6 +39,18 @@ int sendPollSize=7;
 String sendPoll[7];
 int sendpollmin=0;
 int sendpollmax=0;
+
+
+//some server set config
+
+int rentiopenpik=9;
+int rentilasttime=5000;
+
+int lightopenpik=0;
+int lightlasttime=0;
+
+int lightopenvalue=0;
+int lightclosevalue=0;
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xCD };
 //IPAddress ip(192,168,1,199);
@@ -141,8 +154,10 @@ void setup() {
 void monitorLight(){
   unsigned long now = millis();
   int n = 0;
+  
+  
   if ((now - lastlight) >= SENDRENTI) {
-		lastlight = now;
+	lastlight = now;
         n=analogRead(A1);
         char sendstr[12];
         sprintf(sendstr,"33_1_%d_0",n);
@@ -152,22 +167,29 @@ void monitorLight(){
 void monitorBaojing(){
   unsigned long now = millis();
   int n = 0;
-  if ((now - lastrenti) >= HELLO_INTERVAL) {
-		lastrenti = now;
-        n=digitalRead(A2);
-        Serial.println("get renti:");
-        if(n==1){
-          if((now - lastSendRenti) >= SENDRENTI) {
-		lastSendRenti = now;
-                 pushToSend("32_1_3_3");
-          }
-        }
+    n=digitalRead(A2);
+    if(n>=1){
+      lastrenti = now+rentilasttime;
+      digitalWrite(rentiopenpik,HIGH); 
     }
+    
+    if(now>lastrenti){
+       digitalWrite(rentiopenpik,LOW); 
+    }
+    
+  if(n>=1){
+      if((now - lastSendRenti) >= SENDRENTI) {
+          Serial.println("send renti:");
+	  lastSendRenti = now;
+          pushToSend("32_1_3_3");   
+        }          
+    }
+
 
     //发送温度数据
     if ((now - sendtemperaturetime) >= TEMPERATURE) {
         sendtemperaturetime = now;
-                  char buffer[6],sendstr[12];
+          char buffer[6],sendstr[12];
           double tems=getTem();
           dtostrf(tems,2,2,buffer);
           sprintf(sendstr,"30_1_%s_0",buffer);
@@ -282,6 +304,18 @@ void inputTostring(){
           numdata[i]=0;
         }
     }
+    
+}
+int freeRam () {
+  extern int __heap_start, *__brkval; 
+  int v; 
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+}
+
+void printFreeRam() {
+  //Serial.print(msg);
+  Serial.print(" free RAM: ");
+  Serial.println(freeRam());
 }
 
 
@@ -311,23 +345,34 @@ void commandcontrol(){
         }
       }
     else if(classType==20){
-       if(oprate>0){
-             pmwopen(interNum,min(500,max(10,data)),oprate);
-        }else if(oprate==0){
-            pmwclose(interNum,min(500,max(10,data)));
-        }
+       analogWrite(9,oprate);
     }
-    else if(classType==34){
-//      Serial.println("get hongwai");
-//         gethongwai();
+    else if(classType==51){
+      rentiopenpik=oprate;
+    }
+     else if(classType==52){
+       rentilasttime=oprate;
+    }
+     else if(classType==53){
+       lightopenpik=oprate;
+    }
+    else if(classType==54){
+      lightlasttime=oprate;
+    }
+     else if(classType==55){
+       lightopenvalue=oprate;
+    }
+    else if(classType==56){
+      lightclosevalue=oprate;
     }
     
-    if (client.connected()) 
+    if (client.connected()&&classType!=100) 
     {
         client.send(buffer);
 //        Serial.println("feedback:");
         Serial.println(buffer);
     }
+     printFreeRam();
 }
 
 
