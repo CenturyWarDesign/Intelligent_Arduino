@@ -27,12 +27,12 @@ int oprate;
 int data;
 int j=0;
 int mark=0;
-Light light1(4);
-Light light2(5);
-Light light3(6);
-Light light4(7);
-Light light5(8);
-Light light6(9);
+Light light1(3);
+Light light2(4);
+Light light3(5);
+Light light4(6);
+Light light5(7);
+Light light6(8);
 Light lightarr[6]={light1,light2,light3,light4,light5,light6};
 //20 is can use ,please send some import message
 int sendPollSize=7;
@@ -43,14 +43,23 @@ int sendpollmax=0;
 
 //some server set config
 
-int rentiopenpik=9;
+int rentiopenpik=7;
 int rentilasttime=5000;
 
-int lightopenpik=0;
-int lightlasttime=0;
+int lighthightpik=4;
+int lightlowpik=3;
 
-int lightopenvalue=0;
-int lightclosevalue=0;
+int lighthighvalue=30;
+int lightlowvalue=5;
+
+
+int temhightpik=6;
+int temlowpik=5;
+
+int temthighvalue=22;
+int temlowvalue=20;
+
+
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xCD };
 //IPAddress ip(192,168,1,199);
@@ -154,11 +163,28 @@ void setup() {
 void monitorLight(){
   unsigned long now = millis();
   int n = 0;
-  
+   n=analogRead(A1);
+   Serial.println("light:::");
+   Serial.println(n);
+   Serial.println("high value:::");
+   Serial.println(lighthighvalue);
+ if(n>lighthighvalue)
+ {
+      digitalWrite(lightlowpik,HIGH); 
+ }
+ else{
+         digitalWrite(lightlowpik,LOW); 
+ }
+ 
+ if(n<lightlowvalue){
+   digitalWrite(lighthightpik,HIGH); 
+ }
+ else{
+      digitalWrite(lighthightpik,LOW); 
+ }
   
   if ((now - lastlight) >= SENDRENTI) {
 	lastlight = now;
-        n=analogRead(A1);
         char sendstr[12];
         sprintf(sendstr,"33_1_%d_0",n);
         pushToSend(sendstr);
@@ -184,13 +210,34 @@ void monitorBaojing(){
           pushToSend("32_1_3_3");   
         }          
     }
+}
 
-
+void  monitorTem(){
+    unsigned long now = millis();
+   double tems=getTem();
+    Serial.println("tem:::");
+     Serial.println(tems);
+     
+ if(tems>temthighvalue)
+ {
+      digitalWrite(temhightpik,HIGH); 
+ }
+ else{
+         digitalWrite(temhightpik,LOW); 
+ }
+ 
+ if(tems<temlowvalue){
+   digitalWrite(temlowpik,HIGH); 
+ }
+ else{
+      digitalWrite(temlowpik,LOW); 
+ }
+     
     //发送温度数据
     if ((now - sendtemperaturetime) >= TEMPERATURE) {
         sendtemperaturetime = now;
           char buffer[6],sendstr[12];
-          double tems=getTem();
+         
           dtostrf(tems,2,2,buffer);
           sprintf(sendstr,"30_1_%s_0",buffer);
           pushToSend(sendstr);   
@@ -209,8 +256,8 @@ void loop() {
         Serial.println("try on line finish");
     }
     
-    if(needresert==true){
-       pushToSend("00_00_00_00");
+    if(needresert==true&&client.connected()){
+        client.send("00_00_00_00");
        needresert=false;
     }
     
@@ -222,6 +269,7 @@ void loop() {
   //发送一些监控数据及温度数据
    monitorBaojing();
    monitorLight();
+   monitorTem();
    delay(1000);
 }
 
@@ -354,18 +402,32 @@ void commandcontrol(){
        rentilasttime=oprate;
     }
      else if(classType==53){
-       lightopenpik=oprate;
+       lighthightpik=oprate;
     }
     else if(classType==54){
-      lightlasttime=oprate;
+      lightlowpik=oprate;
     }
      else if(classType==55){
-       lightopenvalue=oprate;
+       lighthighvalue=oprate;
     }
     else if(classType==56){
-      lightclosevalue=oprate;
+      lightlowvalue=oprate;
     }
     
+        else if(classType==57){
+       temhightpik=oprate;
+    }
+    else if(classType==58){
+      temlowpik=oprate;
+    }
+     else if(classType==59){
+       temthighvalue=oprate;
+    }
+    else if(classType==60){
+      temlowvalue=oprate;
+    }
+    
+
     if (client.connected()&&classType!=100) 
     {
         client.send(buffer);
